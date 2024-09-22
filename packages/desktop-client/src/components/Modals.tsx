@@ -45,6 +45,7 @@ import { ManageRulesModal } from './modals/ManageRulesModal';
 import { MergeUnusedPayeesModal } from './modals/MergeUnusedPayeesModal';
 import { NotesModal } from './modals/NotesModal';
 import { PayeeAutocompleteModal } from './modals/PayeeAutocompleteModal';
+import { ReconcileModal } from './modals/ReconcileModal';
 import { ReportBalanceMenuModal } from './modals/ReportBalanceMenuModal';
 import { ReportBudgetMenuModal } from './modals/ReportBudgetMenuModal';
 import { ReportBudgetMonthMenuModal } from './modals/ReportBudgetMonthMenuModal';
@@ -363,6 +364,7 @@ export function Modals() {
               onCloseAccount={options.onCloseAccount}
               onReopenAccount={options.onReopenAccount}
               onClose={options.onClose}
+              onReconcileAccount={options.onReconcileAccount}
             />
           );
 
@@ -584,6 +586,15 @@ export function Modals() {
               budgetId={options.budgetId}
               backupDisabled={true}
               watchUpdates={false}
+            />
+          );
+        case 'reconcile':
+          return (
+            <ReconcileModal
+              key={name}
+              accountId={options.accountId}
+              clearedBalance={options.clearedBalance}
+              onReconcile={options.onReconcile}
             />
           );
 
