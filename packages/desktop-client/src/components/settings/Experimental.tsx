@@ -110,6 +110,12 @@ export function ExperimentalFeatures() {
             >
               <Trans>Customizable reports page (dashboards)</Trans>
             </FeatureToggle>
+            <FeatureToggle
+              flag="openidAuth"
+              feedbackLink="https://github.com/actualbudget/actual/issues/524"
+            >
+              <Trans>OpenID authentication method</Trans>
+            </FeatureToggle>
           </View>
         ) : (
           <Link

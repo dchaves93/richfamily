@@ -9,7 +9,7 @@ import {
 } from 'react-error-boundary';
 import { HotkeysProvider } from 'react-hotkeys-hook';
 import { useTranslation } from 'react-i18next';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
 
 import {
@@ -20,12 +20,14 @@ import {
   sync,
 } from 'loot-core/client/actions';
 import { SpreadsheetProvider } from 'loot-core/client/SpreadsheetProvider';
+import { type State } from 'loot-core/client/state-types';
 import * as Platform from 'loot-core/src/client/platform';
 import {
   init as initConnection,
   send,
 } from 'loot-core/src/platform/client/fetch';
 
+import { useActions } from '../hooks/useActions';
 import { useMetadataPref } from '../hooks/useMetadataPref';
 import { installPolyfills } from '../polyfills';
 import { ResponsiveProvider } from '../ResponsiveProvider';
@@ -50,6 +52,8 @@ function AppInner() {
   const { t } = useTranslation();
   const { showBoundary: showErrorBoundary } = useErrorBoundary();
   const dispatch = useDispatch();
+  const userData = useSelector((state: State) => state.user.data);
+  const { signOut, addNotification } = useActions();
 
   async function init() {
     const socketName = await global.Actual.getServerSocket();
@@ -109,6 +113,42 @@ function AppInner() {
   useEffect(() => {
     global.Actual.updateAppMenu(budgetId);
   }, [budgetId]);
+
+  useEffect(() => {
+    if (userData?.tokenExpired) {
+      addNotification({
+        type: 'error',
+        id: 'login-expired',
+        title: 'Login expired',
+        sticky: true,
+        message: 'Login expired, please login again.',
+        button: {
+          title: 'Go to login',
+          action: () => {
+            signOut();
+          },
+        },
+      });
+    }
+  }, [userData, userData?.tokenExpired]);
+
+  useEffect(() => {
+    if (userData?.tokenExpired) {
+      addNotification({
+        type: 'error',
+        id: 'login-expired',
+        title: 'Login expired',
+        sticky: true,
+        message: 'Login expired, please login again.',
+        button: {
+          title: 'Go to login',
+          action: () => {
+            signOut();
+          },
+        },
+      });
+    }
+  }, [userData, userData?.tokenExpired]);
 
   return budgetId ? <FinancesApp /> : <ManagementApp />;
 }

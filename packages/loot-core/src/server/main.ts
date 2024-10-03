@@ -21,6 +21,7 @@ import { q, Query } from '../shared/query';
 import { amountToInteger, stringToInteger } from '../shared/util';
 import { type Budget } from '../types/budget';
 import { Handlers } from '../types/handlers';
+import { OpenIdConfig } from '../types/models/openid';
 
 import { exportToCSV, exportQueryToCSV } from './accounts/export-to-csv';
 import * as link from './accounts/link';
@@ -29,6 +30,7 @@ import { getStartingBalancePayee } from './accounts/payees';
 import * as bankSync from './accounts/sync';
 import * as rules from './accounts/transaction-rules';
 import { batchUpdateTransactions } from './accounts/transactions';
+import { app as adminApp } from './admin/app';
 import { installAPI } from './api';
 import { runQuery as aqlQuery } from './aql';
 import {
@@ -878,8 +880,7 @@ handlers['secret-set'] = async function ({ name, value }) {
       },
     );
   } catch (error) {
-    console.error(error);
-    return { error: 'failed' };
+    return { error: 'failed', reason: error.reason };
   }
 };
 
@@ -1459,17 +1460,27 @@ handlers['subscribe-needs-bootstrap'] = async function ({
   };
 };
 
-handlers['subscribe-bootstrap'] = async function ({ password }) {
+handlers['subscribe-bootstrap'] = async function (loginConfig) {
+  try {
+    await post(getServer().SIGNUP_SERVER + '/bootstrap', loginConfig);
+  } catch (err) {
+    return { error: err.reason || 'network-failure' };
+  }
+  return {};
+};
+
+handlers['subscribe-get-login-methods'] = async function () {
   let res;
   try {
-    res = await post(getServer().SIGNUP_SERVER + '/bootstrap', { password });
+    res = await fetch(getServer().SIGNUP_SERVER + '/login-methods').then(res =>
+      res.json(),
+    );
   } catch (err) {
     return { error: err.reason || 'network-failure' };
   }
 
-  if (res.token) {
-    await asyncStorage.setItem('user-token', res.token);
-    return {};
+  if (res.methods) {
+    return { methods: res.methods };
   }
   return { error: 'internal' };
 };
@@ -1494,16 +1505,38 @@ handlers['subscribe-get-user'] = async function () {
         'X-ACTUAL-TOKEN': userToken,
       },
     });
-    const { status, reason } = JSON.parse(res);
+    let tokenExpired = false;
+    const {
+      status,
+      reason,
+      data: {
+        userName = null,
+        permissions = [],
+        userId = null,
+        displayName = null,
+        loginMethod = null,
+      } = {},
+    } = JSON.parse(res) || {};
 
     if (status === 'error') {
       if (reason === 'unauthorized') {
         return null;
+      } else if (reason === 'token-expired') {
+        tokenExpired = true;
+      } else {
+        return { offline: true };
       }
-      return { offline: true };
     }
 
-    return { offline: false };
+    return {
+      offline: false,
+      userName,
+      permissions,
+      userId,
+      displayName,
+      loginMethod,
+      tokenExpired,
+    };
   } catch (e) {
     console.log(e);
     return { offline: true };
@@ -1528,19 +1561,23 @@ handlers['subscribe-change-password'] = async function ({ password }) {
   return {};
 };
 
-handlers['subscribe-sign-in'] = async function ({ password, loginMethod }) {
-  if (typeof loginMethod !== 'string' || loginMethod == null) {
-    loginMethod = 'password';
+handlers['subscribe-sign-in'] = async function (loginInfo) {
+  if (
+    typeof loginInfo.loginMethod !== 'string' ||
+    loginInfo.loginMethod == null
+  ) {
+    loginInfo.loginMethod = 'password';
   }
   let res;
 
   try {
-    res = await post(getServer().SIGNUP_SERVER + '/login', {
-      loginMethod,
-      password,
-    });
+    res = await post(getServer().SIGNUP_SERVER + '/login', loginInfo);
   } catch (err) {
     return { error: err.reason || 'network-failure' };
+  }
+
+  if (res.redirect_url) {
+    return { redirect_url: res.redirect_url };
   }
 
   if (!res.token) {
@@ -1560,6 +1597,10 @@ handlers['subscribe-sign-out'] = async function () {
     'readOnly',
   ]);
   return 'ok';
+};
+
+handlers['subscribe-set-token'] = async function ({ token }) {
+  await asyncStorage.setItem('user-token', token);
 };
 
 handlers['get-server-version'] = async function () {
@@ -1638,6 +1679,7 @@ handlers['get-budgets'] = async function () {
                 ? { encryptKeyId: prefs.encryptKeyId }
                 : {}),
               ...(prefs.groupId ? { groupId: prefs.groupId } : {}),
+              ...(prefs.owner ? { owner: prefs.owner } : {}),
               name: prefs.budgetName || '(no name)',
             } satisfies Budget;
           }
@@ -1894,6 +1936,50 @@ handlers['export-budget'] = async function () {
   }
 };
 
+handlers['enable-openid'] = async function (loginConfig) {
+  try {
+    const userToken = await asyncStorage.getItem('user-token');
+
+    if (!userToken) {
+      return { error: 'unauthorized' };
+    }
+
+    await post(getServer().SIGNUP_SERVER + '/enable-openid', loginConfig, {
+      'X-ACTUAL-TOKEN': userToken,
+    });
+  } catch (err) {
+    return { error: err.reason || 'network-failure' };
+  }
+  return {};
+};
+
+handlers['enable-password'] = async function (loginConfig) {
+  try {
+    const userToken = await asyncStorage.getItem('user-token');
+
+    if (!userToken) {
+      return { error: 'unauthorized' };
+    }
+
+    await post(getServer().SIGNUP_SERVER + '/enable-password', loginConfig, {
+      'X-ACTUAL-TOKEN': userToken,
+    });
+  } catch (err) {
+    return { error: err.reason || 'network-failure' };
+  }
+  return {};
+};
+
+handlers['get-openid-config'] = async function () {
+  const res = await get(getServer().SIGNUP_SERVER + '/openid-config');
+
+  if (res) {
+    return JSON.parse(res) as OpenIdConfig;
+  }
+
+  return {};
+};
+
 async function loadBudget(id) {
   let dir;
   try {
@@ -2082,6 +2168,7 @@ app.combine(
   filtersApp,
   reportsApp,
   rulesApp,
+  adminApp,
 );
 
 function getDefaultDocumentDir() {

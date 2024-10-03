@@ -5,12 +5,15 @@ import { useDispatch } from 'react-redux';
 import { pushModal } from 'loot-core/client/actions';
 import { send } from 'loot-core/src/platform/client/fetch';
 
+import { useAuth } from '../../auth/AuthProvider';
+import { Permissions } from '../../auth/types';
 import { authorizeBank } from '../../gocardless';
 import { useGoCardlessStatus } from '../../hooks/useGoCardlessStatus';
 import { useSimpleFinStatus } from '../../hooks/useSimpleFinStatus';
 import { useSyncServerStatus } from '../../hooks/useSyncServerStatus';
 import { SvgDotsHorizontalTriple } from '../../icons/v1';
 import { theme } from '../../style';
+import { Warning } from '../alerts';
 import { Button, ButtonWithLoading } from '../common/Button2';
 import { InitialFocus } from '../common/InitialFocus';
 import { Link } from '../common/Link';
@@ -20,6 +23,7 @@ import { Paragraph } from '../common/Paragraph';
 import { Popover } from '../common/Popover';
 import { Text } from '../common/Text';
 import { View } from '../common/View';
+import { useMultiuserEnabled } from '../ServerContext';
 
 type CreateAccountProps = {
   upgradingAccountId?: string;
@@ -35,6 +39,8 @@ export function CreateAccountModal({ upgradingAccountId }: CreateAccountProps) {
   const [menuGoCardlessOpen, setGoCardlessMenuOpen] = useState<boolean>(false);
   const triggerRef = useRef(null);
   const [menuSimplefinOpen, setSimplefinMenuOpen] = useState<boolean>(false);
+  const { hasPermission } = useAuth();
+  const multiuserEnabled = useMultiuserEnabled();
 
   const onConnectGoCardless = () => {
     if (!isGoCardlessSetupComplete) {
@@ -179,6 +185,9 @@ export function CreateAccountModal({ upgradingAccountId }: CreateAccountProps) {
     title = 'Link Account';
   }
 
+  const canSetSecrets =
+    !multiuserEnabled || hasPermission(Permissions.ADMINISTRATOR);
+
   return (
     <Modal name="add-account">
       {({ state: { close } }) => (
@@ -222,138 +231,166 @@ export function CreateAccountModal({ upgradingAccountId }: CreateAccountProps) {
             <View style={{ gap: 10 }}>
               {syncServerStatus === 'online' ? (
                 <>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      gap: 10,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <ButtonWithLoading
-                      isDisabled={syncServerStatus !== 'online'}
-                      style={{
-                        padding: '10px 0',
-                        fontSize: 15,
-                        fontWeight: 600,
-                        flex: 1,
-                      }}
-                      onPress={onConnectGoCardless}
-                    >
-                      {isGoCardlessSetupComplete
-                        ? 'Link bank account with GoCardless'
-                        : 'Set up GoCardless for bank sync'}
-                    </ButtonWithLoading>
-                    {isGoCardlessSetupComplete && (
-                      <>
-                        <Button
-                          ref={triggerRef}
-                          variant="bare"
-                          onPress={() => setGoCardlessMenuOpen(true)}
-                          aria-label="GoCardless menu"
+                  {(canSetSecrets || isGoCardlessSetupComplete) && (
+                    <>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          gap: 10,
+                          alignItems: 'center',
+                        }}
+                      >
+                        <ButtonWithLoading
+                          isDisabled={syncServerStatus !== 'online'}
+                          style={{
+                            padding: '10px 0',
+                            fontSize: 15,
+                            fontWeight: 600,
+                            flex: 1,
+                          }}
+                          onPress={onConnectGoCardless}
                         >
-                          <SvgDotsHorizontalTriple
-                            width={15}
-                            height={15}
-                            style={{ transform: 'rotateZ(90deg)' }}
-                          />
-                        </Button>
-
-                        <Popover
-                          triggerRef={triggerRef}
-                          isOpen={menuGoCardlessOpen}
-                          onOpenChange={() => setGoCardlessMenuOpen(false)}
+                          {isGoCardlessSetupComplete
+                            ? 'Link bank account with GoCardless'
+                            : 'Set up GoCardless for bank sync'}
+                        </ButtonWithLoading>
+                        {isGoCardlessSetupComplete && canSetSecrets && (
+                          <>
+                            <Button
+                              ref={triggerRef}
+                              variant="bare"
+                              onPress={() => setGoCardlessMenuOpen(true)}
+                              aria-label="GoCardless menu"
+                            >
+                              <SvgDotsHorizontalTriple
+                                width={15}
+                                height={15}
+                                style={{ transform: 'rotateZ(90deg)' }}
+                              />
+                            </Button>
+                            {menuGoCardlessOpen && (
+                              <Popover
+                                triggerRef={triggerRef}
+                                isOpen={menuGoCardlessOpen}
+                                onOpenChange={() =>
+                                  setGoCardlessMenuOpen(false)
+                                }
+                              >
+                                <Menu
+                                  onMenuSelect={item => {
+                                    if (item === 'reconfigure') {
+                                      onGoCardlessReset();
+                                    }
+                                  }}
+                                  items={[
+                                    {
+                                      name: 'reconfigure',
+                                      text: 'Reset GoCardless credentials',
+                                    },
+                                  ]}
+                                />
+                              </Popover>
+                            )}
+                          </>
+                        )}
+                      </View>
+                      <Text style={{ lineHeight: '1.4em', fontSize: 15 }}>
+                        <strong>
+                          Link a <em>European</em> bank account
+                        </strong>{' '}
+                        to automatically download transactions. GoCardless
+                        provides reliable, up-to-date information from hundreds
+                        of banks.
+                      </Text>
+                    </>
+                  )}
+                  {(canSetSecrets || isSimpleFinSetupComplete) && (
+                    <>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          gap: 10,
+                          marginTop: '18px',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <ButtonWithLoading
+                          isDisabled={syncServerStatus !== 'online'}
+                          isLoading={loadingSimpleFinAccounts}
+                          style={{
+                            padding: '10px 0',
+                            fontSize: 15,
+                            fontWeight: 600,
+                            flex: 1,
+                          }}
+                          onPress={onConnectSimpleFin}
                         >
-                          <Menu
-                            onMenuSelect={item => {
-                              if (item === 'reconfigure') {
-                                onGoCardlessReset();
-                              }
-                            }}
-                            items={[
-                              {
-                                name: 'reconfigure',
-                                text: 'Reset GoCardless credentials',
-                              },
-                            ]}
-                          />
-                        </Popover>
-                      </>
+                          {isSimpleFinSetupComplete
+                            ? 'Link bank account with SimpleFIN'
+                            : 'Set up SimpleFIN for bank sync'}
+                        </ButtonWithLoading>
+                        {isSimpleFinSetupComplete && canSetSecrets && (
+                          <>
+                            <Button
+                              ref={triggerRef}
+                              variant="bare"
+                              onPress={() => setSimplefinMenuOpen(true)}
+                              aria-label="SimpleFIN menu"
+                            >
+                              <SvgDotsHorizontalTriple
+                                width={15}
+                                height={15}
+                                style={{ transform: 'rotateZ(90deg)' }}
+                              />
+                            </Button>
+                            {menuSimplefinOpen && (
+                              <Popover
+                                triggerRef={triggerRef}
+                                isOpen={menuSimplefinOpen}
+                                onOpenChange={() => setSimplefinMenuOpen(false)}
+                              >
+                                <Menu
+                                  onMenuSelect={item => {
+                                    if (item === 'reconfigure') {
+                                      onSimpleFinReset();
+                                    }
+                                  }}
+                                  items={[
+                                    {
+                                      name: 'reconfigure',
+                                      text: 'Reset SimpleFIN credentials',
+                                    },
+                                  ]}
+                                />
+                              </Popover>
+                            )}
+                          </>
+                        )}
+                      </View>
+                      <Text style={{ lineHeight: '1.4em', fontSize: 15 }}>
+                        <strong>
+                          Link a <em>North American</em> bank account
+                        </strong>{' '}
+                        to automatically download transactions. SimpleFIN
+                        provides reliable, up-to-date information from hundreds
+                        of banks.
+                      </Text>
+                    </>
+                  )}
+                  {(!isGoCardlessSetupComplete || !isSimpleFinSetupComplete) &&
+                    !canSetSecrets && (
+                      <Warning>
+                        You don&apos;t have the required permissions to set up
+                        secrets. Please contact an Admin to configure{' '}
+                        {[
+                          isGoCardlessSetupComplete ? '' : 'GoCardless',
+                          isSimpleFinSetupComplete ? '' : 'SimpleFin',
+                        ]
+                          .filter(Boolean) // Remove empty values
+                          .join(' or ')}
+                        .
+                      </Warning>
                     )}
-                  </View>
-                  <Text style={{ lineHeight: '1.4em', fontSize: 15 }}>
-                    <strong>
-                      Link a <em>European</em> bank account
-                    </strong>{' '}
-                    to automatically download transactions. GoCardless provides
-                    reliable, up-to-date information from hundreds of banks.
-                  </Text>
-
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      gap: 10,
-                      marginTop: '18px',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <ButtonWithLoading
-                      isDisabled={syncServerStatus !== 'online'}
-                      isLoading={loadingSimpleFinAccounts}
-                      style={{
-                        padding: '10px 0',
-                        fontSize: 15,
-                        fontWeight: 600,
-                        flex: 1,
-                      }}
-                      onPress={onConnectSimpleFin}
-                    >
-                      {isSimpleFinSetupComplete
-                        ? 'Link bank account with SimpleFIN'
-                        : 'Set up SimpleFIN for bank sync'}
-                    </ButtonWithLoading>
-                    {isSimpleFinSetupComplete && (
-                      <>
-                        <Button
-                          ref={triggerRef}
-                          variant="bare"
-                          onPress={() => setSimplefinMenuOpen(true)}
-                          aria-label="SimpleFIN menu"
-                        >
-                          <SvgDotsHorizontalTriple
-                            width={15}
-                            height={15}
-                            style={{ transform: 'rotateZ(90deg)' }}
-                          />
-                        </Button>
-                        <Popover
-                          triggerRef={triggerRef}
-                          isOpen={menuSimplefinOpen}
-                          onOpenChange={() => setSimplefinMenuOpen(false)}
-                        >
-                          <Menu
-                            onMenuSelect={item => {
-                              if (item === 'reconfigure') {
-                                onSimpleFinReset();
-                              }
-                            }}
-                            items={[
-                              {
-                                name: 'reconfigure',
-                                text: 'Reset SimpleFIN credentials',
-                              },
-                            ]}
-                          />
-                        </Popover>
-                      </>
-                    )}
-                  </View>
-                  <Text style={{ lineHeight: '1.4em', fontSize: 15 }}>
-                    <strong>
-                      Link a <em>North American</em> bank account
-                    </strong>{' '}
-                    to automatically download transactions. SimpleFIN provides
-                    reliable, up-to-date information from hundreds of banks.
-                  </Text>
                 </>
               ) : (
                 <>

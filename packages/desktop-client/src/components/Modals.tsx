@@ -27,8 +27,10 @@ import { CoverModal } from './modals/CoverModal';
 import { CreateAccountModal } from './modals/CreateAccountModal';
 import { CreateEncryptionKeyModal } from './modals/CreateEncryptionKeyModal';
 import { CreateLocalAccountModal } from './modals/CreateLocalAccountModal';
+import { EditUserAccess } from './modals/EditAccess';
 import { EditFieldModal } from './modals/EditFieldModal';
 import { EditRuleModal } from './modals/EditRuleModal';
+import { EditUserFinanceApp } from './modals/EditUser';
 import { EnvelopeBalanceMenuModal } from './modals/EnvelopeBalanceMenuModal';
 import { EnvelopeBudgetMenuModal } from './modals/EnvelopeBudgetMenuModal';
 import { EnvelopeBudgetMonthMenuModal } from './modals/EnvelopeBudgetMonthMenuModal';
@@ -49,6 +51,8 @@ import { ImportYNAB5Modal } from './modals/manager/ImportYNAB5Modal';
 import { ManageRulesModal } from './modals/ManageRulesModal';
 import { MergeUnusedPayeesModal } from './modals/MergeUnusedPayeesModal';
 import { NotesModal } from './modals/NotesModal';
+import { OpenIDEnableModal } from './modals/OpenIDEnableModal';
+import { PasswordEnableModal } from './modals/PasswordEnableModal';
 import { PayeeAutocompleteModal } from './modals/PayeeAutocompleteModal';
 import { ScheduledTransactionMenuModal } from './modals/ScheduledTransactionMenuModal';
 import { SelectLinkedAccountsModal } from './modals/SelectLinkedAccountsModal';
@@ -59,6 +63,7 @@ import { TrackingBudgetMenuModal } from './modals/TrackingBudgetMenuModal';
 import { TrackingBudgetMonthMenuModal } from './modals/TrackingBudgetMonthMenuModal';
 import { TrackingBudgetSummaryModal } from './modals/TrackingBudgetSummaryModal';
 import { TransferModal } from './modals/TransferModal';
+import { TransferOwnership } from './modals/TransferOwnership';
 import { DiscoverSchedules } from './schedules/DiscoverSchedules';
 import { PostsOfflineNotification } from './schedules/PostsOfflineNotification';
 import { ScheduleDetails } from './schedules/ScheduleDetails';
@@ -588,6 +593,33 @@ export function Modals() {
               watchUpdates={false}
             />
           );
+
+        case 'edit-access':
+          return (
+            <EditUserAccess
+              key={name}
+              defaultUserAccess={options.access}
+              onSave={options.onSave}
+            />
+          );
+
+        case 'edit-user':
+          return (
+            <EditUserFinanceApp
+              key={name}
+              defaultUser={options.user}
+              onSave={options.onSave}
+            />
+          );
+
+        case 'transfer-ownership':
+          return <TransferOwnership key={name} onSave={options.onSave} />;
+
+        case 'enable-openid':
+          return <OpenIDEnableModal key={name} onSave={options.onSave} />;
+
+        case 'enable-password-auth':
+          return <PasswordEnableModal key={name} onSave={options.onSave} />;
 
         default:
           throw new Error('Unknown modal');

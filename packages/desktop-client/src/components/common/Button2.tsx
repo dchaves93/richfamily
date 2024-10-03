@@ -11,6 +11,8 @@ import {
 
 import { css } from 'glamor';
 
+import { useAuth } from '../../auth/AuthProvider';
+import { type Permissions } from '../../auth/types';
 import { AnimatedLoading } from '../../icons/AnimatedLoading';
 import { type CSSProperties, styles, theme } from '../../style';
 
@@ -134,13 +136,22 @@ type ButtonProps = ComponentPropsWithoutRef<typeof ReactAriaButton> & {
   variant?: ButtonVariant;
   bounce?: boolean;
   children?: ReactNode;
+  permission?: Permissions;
 };
 
 type ButtonVariant = 'normal' | 'primary' | 'bare' | 'menu' | 'menuSelected';
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (props, ref) => {
-    const { children, variant = 'normal', bounce = true, ...restProps } = props;
+    const {
+      permission,
+      children,
+      variant = 'normal',
+      bounce = true,
+      ...restProps
+    } = props;
+
+    const { hasPermission } = useAuth();
 
     const variantWithDisabled: ButtonVariant | `${ButtonVariant}Disabled` =
       props.isDisabled ? `${variant}Disabled` : variant;
@@ -175,6 +186,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <ReactAriaButton
         ref={ref}
+        isDisabled={
+          restProps.isDisabled
+            ? restProps.isDisabled
+            : !hasPermission(permission)
+        }
         {...restProps}
         className={
           typeof className === 'function'
