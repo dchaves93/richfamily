@@ -11,6 +11,7 @@ import { type CSSProperties, theme } from '../../style';
 
 import { Text } from './Text';
 import { Toggle } from './Toggle';
+import { Tooltip } from './Tooltip';
 import { View } from './View';
 
 const MenuLine: unique symbol = Symbol('menu-line');
@@ -40,6 +41,7 @@ type MenuItemObject<NameType, Type extends string | symbol = string> = {
   key?: string;
   toggle?: boolean;
   tooltip?: string;
+  customTooltip?: ReactNode;
 };
 
 export type MenuItem<NameType = string> =
@@ -207,24 +209,60 @@ export function Menu<const NameType = string>({
                 <View style={{ flex: 1 }} />
               </>
             ) : (
-              <>
-                <label htmlFor={String(item.name)} title={item.tooltip}>
-                  {item.text}
-                </label>
-                <View style={{ flex: 1 }} />
-                <Toggle
-                  id={String(item.name)}
-                  checked={item.toggle}
-                  onColor={theme.pageTextPositive}
-                  style={{ marginLeft: 5 }}
-                  onToggle={() =>
-                    !item.disabled &&
-                    !isLabel(item) &&
-                    item.toggle !== undefined &&
-                    onMenuSelect?.(item.name)
-                  }
-                />
-              </>
+              <View
+                style={{
+                  flexGrow: 1,
+                }}
+              >
+                {item.customTooltip ? (
+                  <Tooltip
+                    placement="bottom start"
+                    content={item.customTooltip}
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                      }}
+                    >
+                      <label htmlFor={String(item.name)}>{item.text}</label>
+                      <View style={{ flex: 1 }} />
+                      <Toggle
+                        id={String(item.name)}
+                        checked={item.toggle}
+                        onColor={theme.pageTextPositive}
+                        style={{ marginLeft: 5, paddingTop: 5 }}
+                        onToggle={() =>
+                          !item.disabled &&
+                          !isLabel(item) &&
+                          item.toggle !== undefined &&
+                          onMenuSelect?.(item.name)
+                        }
+                      />
+                    </View>
+                  </Tooltip>
+                ) : (
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                    }}
+                  >
+                    <label htmlFor={String(item.name)}>{item.text}</label>
+                    <View style={{ flex: 1 }} />
+                    <Toggle
+                      id={String(item.name)}
+                      checked={item.toggle}
+                      onColor={theme.pageTextPositive}
+                      style={{ marginLeft: 5, paddingTop: 5 }}
+                      onToggle={() =>
+                        !item.disabled &&
+                        !isLabel(item) &&
+                        item.toggle !== undefined &&
+                        onMenuSelect?.(item.name)
+                      }
+                    />
+                  </View>
+                )}
+              </View>
             )}
             {item.key && <Keybinding keyName={item.key} />}
           </View>
