@@ -1348,6 +1348,7 @@ handlers['load-global-prefs'] = async function () {
     [, encryptKey],
     [, theme],
     [, preferredDarkTheme],
+    [, serverSelfSignedCert],
   ] = await asyncStorage.multiGet([
     'floating-sidebar',
     'max-months',
@@ -1355,6 +1356,7 @@ handlers['load-global-prefs'] = async function () {
     'encrypt-key',
     'theme',
     'preferred-dark-theme',
+    'server-self-signed-cert',
   ]);
   return {
     floatingSidebar: floatingSidebar === 'true' ? true : false,
@@ -1373,6 +1375,7 @@ handlers['load-global-prefs'] = async function () {
       preferredDarkTheme === 'dark' || preferredDarkTheme === 'midnight'
         ? preferredDarkTheme
         : 'dark',
+    serverSelfSignedCert: serverSelfSignedCert || undefined,
   };
 };
 
