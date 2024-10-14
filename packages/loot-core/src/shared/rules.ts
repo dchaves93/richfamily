@@ -70,6 +70,7 @@ const FIELD_INFO = {
   reconciled: { type: 'boolean' },
   saved: { type: 'saved' },
   transfer: { type: 'boolean' },
+  parent: { type: 'boolean' },
 } as const satisfies FieldInfoConstraint;
 
 const fieldInfo: FieldInfoConstraint = FIELD_INFO;
