@@ -734,7 +734,7 @@ function PayeeCell({
           }}
           showManagePayees={true}
           clearOnBlur={false}
-          focused={true}
+          autoFocus={true}
           onUpdate={(id, value) => onUpdate?.(value)}
           onSelect={onSave}
           onManagePayees={() => onManagePayees(payee?.id)}
@@ -1223,7 +1223,7 @@ const Transaction = memo(function Transaction({
               accounts={accounts}
               shouldSaveFromKey={shouldSaveFromKey}
               clearOnBlur={false}
-              focused={true}
+              autoFocus={true}
               inputProps={{ onBlur, onKeyDown, style: inputStyle }}
               onUpdate={onUpdate}
               onSelect={onSave}
@@ -1447,7 +1447,7 @@ const Transaction = memo(function Transaction({
               <CategoryAutocomplete
                 categoryGroups={categoryGroups}
                 value={categoryId}
-                focused={true}
+                autoFocus={true}
                 clearOnBlur={false}
                 showSplitOption={!isChild && !isParent}
                 shouldSaveFromKey={shouldSaveFromKey}

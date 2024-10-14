@@ -169,7 +169,7 @@ type AccountItemProps = {
 
 function AccountItem({
   item,
-  className,
+  className = '',
   highlighted,
   embedded,
   ...props

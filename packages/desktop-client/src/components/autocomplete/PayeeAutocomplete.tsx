@@ -340,8 +340,6 @@ export function PayeeAutocomplete({
     }
   }
 
-  const [payeeFieldFocused, setPayeeFieldFocused] = useState(false);
-
   return (
     <Autocomplete
       key={focusTransferPayees ? 'transfers' : 'all'}
@@ -359,16 +357,11 @@ export function PayeeAutocomplete({
         }
         return item.name;
       }}
-      focused={payeeFieldFocused}
       inputProps={{
         ...inputProps,
         autoCapitalize: 'words',
-        onBlur: () => {
-          setRawPayee('');
-          setPayeeFieldFocused(false);
-        },
-        onFocus: () => setPayeeFieldFocused(true),
-        onChange: setRawPayee,
+        onBlur: () => setRawPayee(''),
+        onChangeValue: setRawPayee,
       }}
       onUpdate={(id, inputValue) => onUpdate?.(id, makeNew(id, inputValue))}
       onSelect={handleSelect}
@@ -555,7 +548,7 @@ type PayeeItemProps = {
 
 function PayeeItem({
   item,
-  className,
+  className = '',
   highlighted,
   embedded,
   ...props

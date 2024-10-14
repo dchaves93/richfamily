@@ -363,7 +363,7 @@ type CategoryItemProps = {
 
 function CategoryItem({
   item,
-  className,
+  className = '',
   style,
   highlighted,
   embedded,

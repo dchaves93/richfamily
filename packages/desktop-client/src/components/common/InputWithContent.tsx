@@ -1,69 +1,65 @@
-import { useState, type ComponentProps, type ReactNode } from 'react';
+import { type ComponentPropsWithRef, type ReactNode, forwardRef } from 'react';
+
+import { css } from 'glamor';
 
 import { type CSSProperties, theme } from '../../style';
 
-import { Input, defaultInputStyle } from './Input';
+import { Input } from './Input';
 import { View } from './View';
 
-type InputWithContentProps = ComponentProps<typeof Input> & {
+type InputWithContentProps = ComponentPropsWithRef<typeof Input> & {
   leftContent?: ReactNode;
   rightContent?: ReactNode;
   inputStyle?: CSSProperties;
-  focusStyle?: CSSProperties;
-  style?: CSSProperties;
-  getStyle?: (focused: boolean) => CSSProperties;
 };
-export function InputWithContent({
-  leftContent,
-  rightContent,
-  inputStyle,
-  focusStyle,
-  style,
-  getStyle,
-  ...props
-}: InputWithContentProps) {
-  const [focused, setFocused] = useState(props.focused ?? false);
-
-  return (
-    <View
-      style={{
-        ...defaultInputStyle,
-        padding: 0,
-        flexDirection: 'row',
-        alignItems: 'center',
-        ...style,
-        ...(focused &&
-          (focusStyle ?? {
-            boxShadow: '0 0 0 1px ' + theme.formInputShadowSelected,
-          })),
-        ...getStyle?.(focused),
-      }}
-    >
-      {leftContent}
-      <Input
-        {...props}
-        focused={focused}
+export const InputWithContent = forwardRef<
+  HTMLInputElement,
+  InputWithContentProps
+>(
+  (
+    { leftContent, rightContent, inputStyle, style, className = '', ...props },
+    ref,
+  ) => {
+    return (
+      <View
         style={{
-          width: '100%',
-          ...inputStyle,
-          flex: 1,
-          '&, &:focus, &:hover': {
+          outline: 0,
+          backgroundColor: theme.tableBackground,
+          color: theme.formInputText,
+          margin: 0,
+          borderRadius: 4,
+          border: '1px solid ' + theme.formInputBorder,
+          padding: 0,
+          flexDirection: 'row',
+          alignItems: 'center',
+          ...style,
+        }}
+        className={`${css({
+          '&:focus-within': {
+            boxShadow: '0 0 0 1px ' + theme.formInputShadowSelected,
+          },
+          '& input, input[data-focused], input[data-hovered]': {
             border: 0,
             backgroundColor: 'transparent',
             boxShadow: 'none',
             color: 'inherit',
           },
-        }}
-        onFocus={e => {
-          setFocused(true);
-          props.onFocus?.(e);
-        }}
-        onBlur={e => {
-          setFocused(false);
-          props.onBlur?.(e);
-        }}
-      />
-      {rightContent}
-    </View>
-  );
-}
+        })} ${className}`}
+      >
+        {leftContent}
+        <Input
+          ref={ref}
+          {...props}
+          style={{
+            width: '100%',
+            flex: 1,
+            ...inputStyle,
+          }}
+        />
+        {rightContent}
+      </View>
+    );
+  },
+);
+
+InputWithContent.displayName = 'InputWithContent';

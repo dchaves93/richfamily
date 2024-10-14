@@ -7,6 +7,7 @@ import React, {
   type ComponentPropsWithoutRef,
   type ComponentPropsWithRef,
 } from 'react';
+import { FocusScope } from 'react-aria';
 import {
   ModalOverlay as ReactAriaModalOverlay,
   Modal as ReactAriaModal,
@@ -121,9 +122,11 @@ export const Modal = ({
               }}
             >
               <View style={{ paddingTop: 0, flex: 1, flexShrink: 0 }}>
-                {typeof children === 'function'
-                  ? children(modalProps)
-                  : children}
+                <FocusScope autoFocus restoreFocus>
+                  {typeof children === 'function'
+                    ? children(modalProps)
+                    : children}
+                </FocusScope>
               </View>
               {isLoading && (
                 <View
@@ -391,14 +394,15 @@ export function ModalTitle({
 
   return isEditing ? (
     <Input
-      inputRef={inputRef}
+      ref={inputRef}
       style={{
         fontSize: 25,
         fontWeight: 700,
         textAlign: 'center',
         ...style,
       }}
-      focused={isEditing}
+      autoFocus={isEditing}
+      autoSelect={isEditing}
       defaultValue={title}
       onUpdate={_onTitleUpdate}
       onKeyDown={e => {
