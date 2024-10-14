@@ -37,6 +37,7 @@ type FieldValueTypes = {
   payee: string;
   imported_payee: string;
   saved: string;
+  transfer: boolean;
   cleared: boolean;
   reconciled: boolean;
 };

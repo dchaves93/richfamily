@@ -1435,6 +1435,7 @@ class AccountInternal extends PureComponent<
           ),
         },
       );
+      debugger;
       const conditionsOpKey =
         this.state.filterConditionsOp === 'or' ? '$or' : '$and';
       this.currentQuery = this.rootQuery.filter({
