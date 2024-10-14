@@ -309,20 +309,26 @@ export function conditionsToAQL(conditions, { recurDateBounds = 100 } = {}) {
       }
     })
     .flatMap(cond => {
-        //special cases that require multiple conditions
-        if (cond.op === 'is' && cond.field === 'category' && cond.value === null) {
-          return [cond, 
-            new Condition('is', 'transfer', false, null),
-            new Condition('is', 'parent', false, null)
-          ];
-        }
-        return [cond];
-      })
+      //special cases that require multiple conditions
+      if (
+        cond.op === 'is' &&
+        cond.field === 'category' &&
+        cond.value === null
+      ) {
+        return [
+          cond,
+          new Condition('is', 'transfer', false, null),
+          new Condition('is', 'parent', false, null),
+        ];
+      }
+      return [cond];
+    })
     .filter(Boolean);
 
   // rule -> actualql
   const filters = conditions.map(cond => {
-    let { type, field, op, value, options } = cond;
+    const { type, options } = cond;
+    let { field, op, value } = cond;
 
     const getValue = value => {
       if (type === 'number') {
@@ -332,7 +338,7 @@ export function conditionsToAQL(conditions, { recurDateBounds = 100 } = {}) {
     };
 
     if (field === 'transfer' && op === 'is') {
-      field = "transfer_id";
+      field = 'transfer_id';
       if (value) {
         op = 'isNot';
         value = null;
@@ -340,11 +346,11 @@ export function conditionsToAQL(conditions, { recurDateBounds = 100 } = {}) {
         value = null;
       }
     } else if (field === 'parent' && op === 'is') {
-      field = "is_parent";
+      field = 'is_parent';
       if (value) {
-        op = 'true'
+        op = 'true';
       } else {
-        op = 'false'
+        op = 'false';
       }
     }
 
