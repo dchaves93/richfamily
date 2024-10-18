@@ -64,9 +64,15 @@ export function SidebarGroup({
         alignItems: 'center',
         userSelect: 'none',
         WebkitUserSelect: 'none',
+        height: 20,
       }}
+      ref={triggerRef}
       onClick={() => {
         onToggleCollapse(group.id);
+      }}
+      onContextMenu={e => {
+        e.preventDefault();
+        setMenuOpen(true);
       }}
     >
       {!dragPreview && (
@@ -95,7 +101,7 @@ export function SidebarGroup({
       </div>
       {!dragPreview && (
         <>
-          <View style={{ marginLeft: 5, flexShrink: 0 }} ref={triggerRef}>
+          <View style={{ marginLeft: 5, flexShrink: 0 }}>
             <Button
               variant="bare"
               className="hover-visible"
@@ -111,6 +117,7 @@ export function SidebarGroup({
               isOpen={menuOpen}
               onOpenChange={() => setMenuOpen(false)}
               style={{ width: 200 }}
+              isNonModal
             >
               <Menu
                 onMenuSelect={type => {
