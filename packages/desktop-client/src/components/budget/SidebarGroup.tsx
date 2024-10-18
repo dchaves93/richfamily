@@ -13,6 +13,7 @@ import { Text } from '../common/Text';
 import { View } from '../common/View';
 import { NotesButton } from '../NotesButton';
 import { InputCell } from '../table';
+import { useFeatureFlag } from "../../hooks/useFeatureFlag";
 
 type SidebarGroupProps = {
   group: {
@@ -32,6 +33,7 @@ type SidebarGroupProps = {
   onEdit?: (id: string) => void;
   onSave?: (group: object) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
+  onApplyBudgetTemplate?: (categories: object[]) => void;
   onShowNewCategory?: (groupId: string) => void;
   onHideNewGroup?: () => void;
   onToggleCollapse?: (id: string) => void;
@@ -47,11 +49,14 @@ export function SidebarGroup({
   onEdit,
   onSave,
   onDelete,
+  onApplyBudgetTemplate,
   onShowNewCategory,
   onHideNewGroup,
   onToggleCollapse,
 }: SidebarGroupProps) {
   const { t } = useTranslation();
+  const isGoalTemplatesEnabled = useFeatureFlag('goalTemplatesEnabled');
+
 
   const temporary = group.id === 'new';
   const [menuOpen, setMenuOpen] = useState(false);
@@ -122,6 +127,10 @@ export function SidebarGroup({
                     onDelete(group.id);
                   } else if (type === 'toggle-visibility') {
                     onSave({ ...group, hidden: !group.hidden });
+                  } else if (type === 'apply-multiple-category-template'){
+                    onApplyBudgetTemplate?.(group.categories.map(c => c.id));
+                    console.log(group.categories);
+                    console.log("pressed on apply")
                   }
                   setMenuOpen(false);
                 }}
@@ -133,6 +142,14 @@ export function SidebarGroup({
                     text: group.hidden ? t('Show') : t('Hide'),
                   },
                   onDelete && { name: 'delete', text: t('Delete') },
+                  ...(isGoalTemplatesEnabled
+                    ? [
+                      {
+                        name: 'apply-multiple-category-template',
+                        text: t('Apply budget template for all Categories in Group'),
+                      },
+                    ]
+                    : []),
                 ]}
               />
             </Popover>
