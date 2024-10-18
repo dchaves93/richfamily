@@ -3,7 +3,8 @@ export type FeatureFlag =
   | 'reportBudget'
   | 'goalTemplatesEnabled'
   | 'spendingReport'
-  | 'actionTemplating';
+  | 'actionTemplating'
+  | 'upcomingLengthAdjustment';
 
 /**
  * Cross-device preferences. These sync across devices when they are changed.
@@ -11,6 +12,7 @@ export type FeatureFlag =
 export type SyncedPrefs = Partial<
   Record<
     | 'budgetType'
+    | 'upcomingScheduledTransactionLength'
     | 'firstDayOfWeekIdx'
     | 'dateFormat'
     | 'numberFormat'

@@ -61,6 +61,7 @@ const FIELD_INFO = {
     disallowedOps: new Set(['hasTags']),
   },
   payee: { type: 'id' },
+  payee_name: { type: 'string' },
   date: { type: 'date' },
   notes: { type: 'string' },
   amount: { type: 'number' },
@@ -114,6 +115,8 @@ export function mapField(field, opts?) {
   switch (field) {
     case 'imported_payee':
       return 'imported payee';
+    case 'payee_name':
+      return 'payee (name)';
     case 'amount':
       if (opts.inflow) {
         return 'amount (inflow)';
