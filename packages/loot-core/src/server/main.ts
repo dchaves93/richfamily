@@ -1803,6 +1803,51 @@ handlers['delete-budget'] = async function ({ id, cloudFileId }) {
   return 'ok';
 };
 
+handlers['duplicate-budget'] = async function ({ id, newName, cloudFileId }) {
+  const budgetDir = fs.getBudgetDir(id);
+
+  let budgetName = newName;
+  let sameName = false;
+
+  if (budgetName.indexOf(' - copy') !== -1) {
+    sameName = true;
+    budgetName = budgetName.replace(' - copy', '');
+  }
+
+  const newId = await idFromFileName(budgetName);
+
+  const budgets = await handlers['get-budgets']();
+  budgetName = await uniqueFileName(
+    budgets,
+    sameName ? budgetName + ' - copy' : budgetName,
+  );
+
+  // copy metadata from current budget
+  // replace id with new budget id and budgetName with new budget name
+  const metadataText = await fs.readFile(fs.join(budgetDir, 'metadata.json'));
+  const metadata = JSON.parse(metadataText);
+  metadata.id = newId;
+  metadata.budgetName = budgetName;
+
+  const newBudgetDir = fs.getBudgetDir(newId);
+  await fs.mkdir(newBudgetDir);
+
+  // write metadata for new budget
+  await fs.writeFile(
+    fs.join(newBudgetDir, 'metadata.json'),
+    JSON.stringify(metadata),
+  );
+
+  await fs.copyFile(
+    fs.join(budgetDir, 'db.sqlite'),
+    fs.join(newBudgetDir, 'db.sqlite'),
+  );
+
+  // TODO: Check if there are backups in budgetDir and copy those files too
+
+  return newId;
+};
+
 handlers['create-budget'] = async function ({
   budgetName,
   avoidUpload,
